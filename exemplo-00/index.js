@@ -33,6 +33,16 @@ async function trainModel(xs, ys) {
     return model;
 }
 
+async function predict(model, pessoa) {
+    //transformar array js em tensor
+    const inputTensor = tf.tensor2d(pessoa);
+
+    //fazer a previsão usando o modelo treinado
+    const pred = model.predict(inputTensor);
+    const predArray = await pred.array();
+    return predArray[0].map((prod, index) => ({ prod, index }));
+}
+
 //Exemplo de pessoas
 // const pessoas = [
 //     { nome: 'João', idade: 30, cor: "verde", localizacao: "São Paulo" },
@@ -69,3 +79,25 @@ const xs = tf.tensor2d(tensorPessoasNormalizado);
 const ys = tf.tensor2d(tensorLabels);
 
 const model = await trainModel(xs, ys);
+
+const pessoa = {
+    nome: 'Ana',
+    idade: 28,
+    cor: "verde",
+    localizacao: "São Paulo"
+}
+
+//normalizando idade de Ana
+//exemplo idade minima = 25 ideade máxima = 40 resuldado = 0.2
+const idadeMin = 25;
+const idadeMax = 40;
+const idadeNormalizada = (pessoa.idade - idadeMin) / (idadeMax - idadeMin);
+
+const pessoaTensorNormalizada = [
+    [0.2, 1, 0, 0, 1, 0, 0] // Ana
+]
+
+const predicao = await predict(model, pessoaTensorNormalizada);
+const resultado = predicao.sort((a, b) => b.prod - a.prod).map(p => `${labelsNomes[p.index]} (${(p.prod * 100).toFixed(2)}%)`).join('\n');
+
+console.log(resultado)
